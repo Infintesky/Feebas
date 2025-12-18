@@ -20,6 +20,12 @@ from platform.platform_4 import analyze_exported_components
 from platform.platform_6 import analyze_webview_security
 from platform.platform_7 import analyze_javascript_interface
 from platform.platform_10 import analyze_cache_data
+from code.code_1 import analyze_certificate_security
+from code.code_2 import analyze_debugging_detection
+from code.code_3 import analyze_debug_symbols
+from code.code_4 import analyze_debug_logging
+from code.code_9 import analyze_binary_protections
+from resilience.resilience_2 import analyze_anti_debugging
 from config import PACKAGE_NAME, TEST_NRIC
 
 
@@ -211,6 +217,89 @@ def main():
                 print(f"\n[-] Test failed: NETWORK-3 (network security configuration issues detected)")
             failed_tests.append("NETWORK-3")
 
+        # MASVS-CODE Tests
+        print("\n" + "=" * 80)
+        print("MASVS-CODE Tests")
+        print("=" * 80)
+        print()
+
+        # CODE-1 - Testing Certificate Security (MobSF-based)
+        if mobsf_report:
+            result = analyze_certificate_security(
+                mobsf_report=mobsf_report,
+                test_id="MASTG-CODE-1 - Testing Certificate Security"
+            )
+
+            if not result:
+                print("\n[-] Test failed: CODE-1 (error analyzing certificate)")
+                failed_tests.append("CODE-1")
+            elif not result['passed']:
+                print(f"\n[-] Test failed: CODE-1 (insecure certificate configuration)")
+                failed_tests.append("CODE-1")
+        else:
+            print("\n[!] SKIP: CODE-1 (MobSF report not available)")
+            print("=" * 80)
+
+        # CODE-2 - Testing for Debugging Flags and WebView Debugging
+        result = analyze_debugging_detection(
+            apktool_dir=apktool_dir,
+            sources_dir=sources_dir,
+            test_id="MASTG-CODE-2 - Testing for Debugging Flags and WebView Debugging"
+        )
+
+        if not result:
+            print("\n[-] Test failed: CODE-2 (error analyzing debugging detection)")
+            failed_tests.append("CODE-2")
+        elif not result['passed']:
+            print(f"\n[-] Test failed: CODE-2 (debugging flags or insecure WebView debugging detected)")
+            failed_tests.append("CODE-2")
+
+        # CODE-3 - Testing for Debugging Symbols (MobSF-based)
+        if mobsf_report:
+            result = analyze_debug_symbols(
+                mobsf_report=mobsf_report,
+                test_id="MASTG-CODE-3 - Testing for Debugging Symbols"
+            )
+
+            if not result:
+                print("\n[-] Test failed: CODE-3 (error analyzing debug symbols)")
+                failed_tests.append("CODE-3")
+            elif not result['passed']:
+                print(f"\n[-] Test failed: CODE-3 (debugging symbols not stripped)")
+                failed_tests.append("CODE-3")
+        else:
+            print("\n[!] SKIP: CODE-3 (MobSF report not available)")
+            print("=" * 80)
+
+        # CODE-4 - Testing for Debugging Code and Verbose Error Logging
+        result = analyze_debug_logging(
+            test_id="MASTG-CODE-4 - Testing for Debugging Code and Verbose Error Logging"
+        )
+
+        if not result:
+            print("\n[-] Test failed: CODE-4 (error capturing logcat)")
+            failed_tests.append("CODE-4")
+        elif not result['passed']:
+            print(f"\n[-] Test failed: CODE-4 (StrictMode found in logcat)")
+            failed_tests.append("CODE-4")
+
+        # CODE-9 - Testing Binary Protection Mechanisms (MobSF-based)
+        if mobsf_report:
+            result = analyze_binary_protections(
+                mobsf_report=mobsf_report,
+                test_id="MASTG-CODE-9 - Testing Binary Protection Mechanisms"
+            )
+
+            if not result:
+                print("\n[-] Test failed: CODE-9 (error analyzing binary protections)")
+                failed_tests.append("CODE-9")
+            elif not result['passed']:
+                print(f"\n[-] Test failed: CODE-9 (PIE or Stack Canary disabled in libraries)")
+                failed_tests.append("CODE-9")
+        else:
+            print("\n[!] SKIP: CODE-9 (MobSF report not available)")
+            print("=" * 80)
+
         # MASVS-PLATFORM Tests
         print("\n" + "=" * 80)
         print("MASVS-PLATFORM Tests")
@@ -302,6 +391,26 @@ def main():
         elif not result['passed']:
             print(f"\n[-] Test failed: PLATFORM-10 (sensitive data found in cache)")
             failed_tests.append("PLATFORM-10")
+
+        # MASVS-RESILIENCE Tests
+        print("\n" + "=" * 80)
+        print("MASVS-RESILIENCE Tests")
+        print("=" * 80)
+        print()
+
+        # RESILIENCE-2 - Testing Anti-Debugging Detection
+        result = analyze_anti_debugging(
+            apktool_dir=apktool_dir,
+            package_name=PACKAGE_NAME,
+            test_id="MASTG-RESILIENCE-2 - Testing Anti-Debugging Detection"
+        )
+
+        if not result:
+            print("\n[-] Test failed: RESILIENCE-2 (error analyzing anti-debugging)")
+            failed_tests.append("RESILIENCE-2")
+        elif not result['passed']:
+            print(f"\n[-] Test failed: RESILIENCE-2 (android:debuggable is enabled)")
+            failed_tests.append("RESILIENCE-2")
 
     finally:
         # Clean up MobSF container
