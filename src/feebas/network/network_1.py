@@ -27,26 +27,29 @@ def search_hardcoded_http_urls(sources_dir):
 
     for root, _, files in os.walk(sources_dir):
         for file in files:
-            if file.endswith('.java'):
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        for line_num, line in enumerate(f, start=1):
-                            for match in pattern.finditer(line):
-                                url = match.group(0)
+            # Skip non-Java files
+            if not file.endswith('.java'):
+                continue
 
-                                # Check if URL is in whitelist
-                                is_whitelisted = False
-                                for whitelist_url in HTTP_URL_WHITELIST:
-                                    if url.startswith(whitelist_url):
-                                        is_whitelisted = True
-                                        break
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    for line_num, line in enumerate(f, start=1):
+                        for match in pattern.finditer(line):
+                            url = match.group(0)
 
-                                # Only add if not whitelisted
-                                if not is_whitelisted:
-                                    matches.append((file_path, line_num, url))
-                except Exception:
-                    continue
+                            # Check if URL is in whitelist
+                            is_whitelisted = False
+                            for whitelist_url in HTTP_URL_WHITELIST:
+                                if url.startswith(whitelist_url):
+                                    is_whitelisted = True
+                                    break
+
+                            # Only add if not whitelisted
+                            if not is_whitelisted:
+                                matches.append((file_path, line_num, url))
+            except Exception:
+                continue
 
     print(f"[+] Found {len(matches)} hardcoded HTTP URLs (excluding whitelisted)")
     return matches
@@ -126,21 +129,24 @@ def search_custom_http_sockets(sources_dir):
 
     for root, _, files in os.walk(sources_dir):
         for file in files:
-            if file.endswith('.java'):
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        content = f.read()
-                        for socket_class in socket_classes:
-                            # Escape dots for regex
-                            escaped_class = socket_class.replace('.', r'\.')
-                            pattern = re.compile(rf'\b{escaped_class}\b')
+            # Skip non-Java files
+            if not file.endswith('.java'):
+                continue
 
-                            for match in pattern.finditer(content):
-                                line_num = content[:match.start()].count('\n') + 1
-                                matches.append((file_path, line_num, socket_class))
-                except Exception:
-                    continue
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                    for socket_class in socket_classes:
+                        # Escape dots for regex
+                        escaped_class = socket_class.replace('.', r'\.')
+                        pattern = re.compile(rf'\b{escaped_class}\b')
+
+                        for match in pattern.finditer(content):
+                            line_num = content[:match.start()].count('\n') + 1
+                            matches.append((file_path, line_num, socket_class))
+            except Exception:
+                continue
 
     print(f"[+] Found {len(matches)} instances of socket class usage")
     return matches

@@ -23,16 +23,19 @@ def search_crypto_keywords(decompiled_dir, keywords):
     # Search recursively through all .java files
     for root, dirs, files in os.walk(decompiled_dir):
         for file in files:
-            if file.endswith('.java'):
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        for line_num, line in enumerate(f, start=1):
-                            if pattern.search(line):
-                                matches.append((file_path, line_num, line.strip()))
-                except Exception:
-                    # Skip files that can't be read
-                    continue
+            # Skip non-Java files
+            if not file.endswith('.java'):
+                continue
+
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    for line_num, line in enumerate(f, start=1):
+                        if pattern.search(line):
+                            matches.append((file_path, line_num, line.strip()))
+            except Exception:
+                # Skip files that can't be read
+                continue
 
     print(f"[+] Found {len(matches)} matches for crypto keywords")
     return matches
@@ -67,18 +70,21 @@ def search_hardcoded_keys(decompiled_dir):
 
     for root, dirs, files in os.walk(decompiled_dir):
         for file in files:
-            if file.endswith('.java'):
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        for line_num, line in enumerate(f, start=1):
-                            for pattern_str, pattern_desc in patterns:
-                                pattern = re.compile(pattern_str)
-                                if pattern.search(line):
-                                    matches.append((file_path, line_num, line.strip(), pattern_desc))
-                                    break  # Only match once per line
-                except Exception:
-                    continue
+            # Skip non-Java files
+            if not file.endswith('.java'):
+                continue
+
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    for line_num, line in enumerate(f, start=1):
+                        for pattern_str, pattern_desc in patterns:
+                            pattern = re.compile(pattern_str)
+                            if pattern.search(line):
+                                matches.append((file_path, line_num, line.strip(), pattern_desc))
+                                break  # Only match once per line
+            except Exception:
+                continue
 
     print(f"[+] Found {len(matches)} potential hardcoded keys")
     return matches
@@ -105,27 +111,30 @@ def search_insecure_algorithms(decompiled_dir):
         (r'KeyGenerator\.getInstance\s*\(\s*"(DES|DESede|TripleDES|3DES|RC4|Blowfish)"\s*\)', "KeyGenerator.getInstance"),
     ]
 
-    for root, dirs, files in os.walk(decompiled_dir):
+    for root, _, files in os.walk(decompiled_dir):
         for file in files:
-            if file.endswith('.java'):
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        content = f.read()
-                        for pattern_str, method_name in insecure_patterns:
-                            pattern = re.compile(pattern_str)
-                            for match in pattern.finditer(content):
-                                # Find line number
-                                line_num = content[:match.start()].count('\n') + 1
-                                # Get the line content
-                                lines = content.split('\n')
-                                line_content = lines[line_num - 1].strip() if line_num <= len(lines) else ""
-                                # Get the algorithm name from the match
-                                algorithm = match.group(1)
+            # Skip non-Java files
+            if not file.endswith('.java'):
+                continue
 
-                                matches.append((file_path, line_num, line_content, algorithm, method_name))
-                except Exception:
-                    continue
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                    for pattern_str, method_name in insecure_patterns:
+                        pattern = re.compile(pattern_str)
+                        for match in pattern.finditer(content):
+                            # Find line number
+                            line_num = content[:match.start()].count('\n') + 1
+                            # Get the line content
+                            lines = content.split('\n')
+                            line_content = lines[line_num - 1].strip() if line_num <= len(lines) else ""
+                            # Get the algorithm name from the match
+                            algorithm = match.group(1)
+
+                            matches.append((file_path, line_num, line_content, algorithm, method_name))
+            except Exception:
+                continue
 
     print(f"[+] Found {len(matches)} instances of insecure algorithms")
     return matches
@@ -152,24 +161,27 @@ def search_secure_algorithms(decompiled_dir):
         (r'KeyGenerator\.getInstance\s*\(\s*"(AES|HmacSHA256|HmacSHA512)"\s*\)', "KeyGenerator.getInstance"),
     ]
 
-    for root, dirs, files in os.walk(decompiled_dir):
+    for root, _, files in os.walk(decompiled_dir):
         for file in files:
-            if file.endswith('.java'):
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        content = f.read()
-                        for pattern_str, method_name in secure_patterns:
-                            pattern = re.compile(pattern_str)
-                            for match in pattern.finditer(content):
-                                # Find line number
-                                line_num = content[:match.start()].count('\n') + 1
-                                # Get the algorithm name from the match
-                                algorithm = match.group(1)
+            # Skip non-Java files
+            if not file.endswith('.java'):
+                continue
 
-                                matches.append((file_path, line_num, algorithm, method_name))
-                except Exception:
-                    continue
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                    for pattern_str, method_name in secure_patterns:
+                        pattern = re.compile(pattern_str)
+                        for match in pattern.finditer(content):
+                            # Find line number
+                            line_num = content[:match.start()].count('\n') + 1
+                            # Get the algorithm name from the match
+                            algorithm = match.group(1)
+
+                            matches.append((file_path, line_num, algorithm, method_name))
+            except Exception:
+                continue
 
     print(f"[+] Found {len(matches)} instances of secure algorithms")
     return matches

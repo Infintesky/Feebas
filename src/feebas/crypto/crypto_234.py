@@ -22,20 +22,23 @@ def search_crypto_api_usage(sources_dir):
 
     api_usage = {}
 
-    for root, dirs, files in os.walk(sources_dir):
+    for root, _, files in os.walk(sources_dir):
         for file in files:
-            if file.endswith('.java'):
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        for line_num, line in enumerate(f, start=1):
-                            matches = pattern.findall(line)
-                            for api_name in matches:
-                                if api_name not in api_usage:
-                                    api_usage[api_name] = []
-                                api_usage[api_name].append((file_path, line_num))
-                except Exception:
-                    continue
+            # Skip non-Java files
+            if not file.endswith('.java'):
+                continue
+
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    for line_num, line in enumerate(f, start=1):
+                        matches = pattern.findall(line)
+                        for api_name in matches:
+                            if api_name not in api_usage:
+                                api_usage[api_name] = []
+                            api_usage[api_name].append((file_path, line_num))
+            except Exception:
+                continue
 
     print(f"[+] Found {sum(len(v) for v in api_usage.values())} cryptographic API usages across {len(api_usage)} different APIs")
     return api_usage
@@ -64,21 +67,24 @@ def detect_weak_primitives(sources_dir):
         (r'NoPadding', "No padding (potential security risk)"),
     ]
 
-    for root, dirs, files in os.walk(sources_dir):
+    for root, _, files in os.walk(sources_dir):
         for file in files:
-            if file.endswith('.java'):
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        content = f.read()
-                        for pattern_str, description in weak_patterns:
-                            pattern = re.compile(pattern_str)
-                            for match in pattern.finditer(content):
-                                line_num = content[:match.start()].count('\n') + 1
-                                primitive_type = match.group(1) if match.groups() else "Unknown"
-                                weak_primitives.append((file_path, line_num, primitive_type, description))
-                except Exception:
-                    continue
+            # Skip non-Java files
+            if not file.endswith('.java'):
+                continue
+
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                    for pattern_str, description in weak_patterns:
+                        pattern = re.compile(pattern_str)
+                        for match in pattern.finditer(content):
+                            line_num = content[:match.start()].count('\n') + 1
+                            primitive_type = match.group(1) if match.groups() else "Unknown"
+                            weak_primitives.append((file_path, line_num, primitive_type, description))
+            except Exception:
+                continue
 
     print(f"[+] Found {len(weak_primitives)} instances of weak cryptographic primitives")
     return weak_primitives

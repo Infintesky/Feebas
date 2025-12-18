@@ -2,23 +2,7 @@
 """Android Implicit Intents and WebView SafeBrowsing Analysis (PLATFORM-2)."""
 import os
 import xml.etree.ElementTree as ET
-
-
-# Potentially dangerous system actions that could be exploited
-DANGEROUS_SYSTEM_ACTIONS = [
-    'android.intent.action.VIEW',
-    'android.intent.action.SEND',
-    'android.intent.action.SENDTO',
-    'android.intent.action.SEND_MULTIPLE',
-    'android.intent.action.MAIN',
-    'android.intent.action.EDIT',
-    'android.intent.action.PICK',
-    'android.intent.action.GET_CONTENT',
-    'android.intent.action.DIAL',
-    'android.intent.action.CALL',
-    'android.intent.action.WEB_SEARCH',
-    'android.intent.action.PROCESS_TEXT'
-]
+from config import DANGEROUS_SYSTEM_ACTIONS
 
 
 def check_implicit_intents(apktool_dir):

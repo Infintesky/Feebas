@@ -24,19 +24,22 @@ def search_crypto_key_usage(sources_dir):
 
     for root, _, files in os.walk(sources_dir):
         for file in files:
-            if file.endswith('.java'):
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        for line_num, line in enumerate(f, start=1):
-                            matches = pattern.findall(line)
-                            if matches:
-                                if file_path not in key_usage:
-                                    key_usage[file_path] = []
-                                for api_name in matches:
-                                    key_usage[file_path].append((line_num, line.strip(), api_name))
-                except Exception:
-                    continue
+            # Skip non-Java files
+            if not file.endswith('.java'):
+                continue
+
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    for line_num, line in enumerate(f, start=1):
+                        matches = pattern.findall(line)
+                        if matches:
+                            if file_path not in key_usage:
+                                key_usage[file_path] = []
+                            for api_name in matches:
+                                key_usage[file_path].append((line_num, line.strip(), api_name))
+            except Exception:
+                continue
 
     total_usages = sum(len(v) for v in key_usage.values())
     print(f"[+] Found cryptographic API usage in {len(key_usage)} files ({total_usages} instances)")
@@ -72,18 +75,21 @@ def search_hardcoded_keys(sources_dir):
 
     for root, _, files in os.walk(sources_dir):
         for file in files:
-            if file.endswith('.java'):
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        for line_num, line in enumerate(f, start=1):
-                            for pattern_str, pattern_desc in patterns:
-                                pattern = re.compile(pattern_str)
-                                if pattern.search(line):
-                                    matches.append((file_path, line_num, line.strip(), pattern_desc))
-                                    break  # Only match once per line
-                except Exception:
-                    continue
+            # Skip non-Java files
+            if not file.endswith('.java'):
+                continue
+
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    for line_num, line in enumerate(f, start=1):
+                        for pattern_str, pattern_desc in patterns:
+                            pattern = re.compile(pattern_str)
+                            if pattern.search(line):
+                                matches.append((file_path, line_num, line.strip(), pattern_desc))
+                                break  # Only match once per line
+            except Exception:
+                continue
 
     print(f"[+] Found {len(matches)} potential hardcoded keys")
     return matches
@@ -117,20 +123,23 @@ def search_insecure_key_storage(sources_dir):
 
     for root, _, files in os.walk(sources_dir):
         for file in files:
-            if file.endswith('.java'):
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        content = f.read()
-                        for pattern_str, storage_type in insecure_storage_patterns:
-                            pattern = re.compile(pattern_str)
-                            for match in pattern.finditer(content):
-                                line_num = content[:match.start()].count('\n') + 1
-                                lines = content.split('\n')
-                                line_content = lines[line_num - 1].strip() if line_num <= len(lines) else ""
-                                matches.append((file_path, line_num, line_content, storage_type))
-                except Exception:
-                    continue
+            # Skip non-Java files
+            if not file.endswith('.java'):
+                continue
+
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                    for pattern_str, storage_type in insecure_storage_patterns:
+                        pattern = re.compile(pattern_str)
+                        for match in pattern.finditer(content):
+                            line_num = content[:match.start()].count('\n') + 1
+                            lines = content.split('\n')
+                            line_content = lines[line_num - 1].strip() if line_num <= len(lines) else ""
+                            matches.append((file_path, line_num, line_content, storage_type))
+            except Exception:
+                continue
 
     print(f"[+] Found {len(matches)} instances of potentially insecure key storage")
     return matches
@@ -155,16 +164,19 @@ def search_keystore_usage(sources_dir):
 
     for root, _, files in os.walk(sources_dir):
         for file in files:
-            if file.endswith('.java'):
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        content = f.read()
-                        for match in pattern.finditer(content):
-                            line_num = content[:match.start()].count('\n') + 1
-                            matches.append((file_path, line_num))
-                except Exception:
-                    continue
+            # Skip non-Java files
+            if not file.endswith('.java'):
+                continue
+
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                    for match in pattern.finditer(content):
+                        line_num = content[:match.start()].count('\n') + 1
+                        matches.append((file_path, line_num))
+            except Exception:
+                continue
 
     print(f"[+] Found {len(matches)} instances of KeyStore usage")
     return matches

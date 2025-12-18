@@ -27,26 +27,29 @@ def search_insecure_random(sources_dir):
 
     for root, _, files in os.walk(sources_dir):
         for file in files:
-            if file.endswith('.java'):
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        content = f.read()
+            # Skip non-Java files
+            if not file.endswith('.java'):
+                continue
 
-                        # Check if file has cryptographic or sensitive operations
-                        # This helps identify if Random is being used in sensitive context
-                        is_sensitive = is_sensitive_context(content)
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
 
-                        for pattern_str, random_type in insecure_patterns:
-                            pattern = re.compile(pattern_str)
-                            for match in pattern.finditer(content):
-                                line_num = content[:match.start()].count('\n') + 1
-                                lines = content.split('\n')
-                                line_content = lines[line_num - 1].strip() if line_num <= len(lines) else ""
+                    # Check if file has cryptographic or sensitive operations
+                    # This helps identify if Random is being used in sensitive context
+                    is_sensitive = is_sensitive_context(content)
 
-                                matches.append((file_path, line_num, line_content, random_type, is_sensitive))
-                except Exception:
-                    continue
+                    for pattern_str, random_type in insecure_patterns:
+                        pattern = re.compile(pattern_str)
+                        for match in pattern.finditer(content):
+                            line_num = content[:match.start()].count('\n') + 1
+                            lines = content.split('\n')
+                            line_content = lines[line_num - 1].strip() if line_num <= len(lines) else ""
+
+                            matches.append((file_path, line_num, line_content, random_type, is_sensitive))
+            except Exception:
+                continue
 
     print(f"[+] Found {len(matches)} instances of insecure Random() usage")
     return matches
@@ -76,27 +79,30 @@ def search_non_random_sources(sources_dir):
 
     for root, _, files in os.walk(sources_dir):
         for file in files:
-            if file.endswith('.java'):
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        content = f.read()
+            # Skip non-Java files
+            if not file.endswith('.java'):
+                continue
 
-                        # Check if file has cryptographic or sensitive operations
-                        is_sensitive = is_sensitive_context(content)
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
 
-                        for pattern_str, source_type in non_random_patterns:
-                            pattern = re.compile(pattern_str)
-                            for match in pattern.finditer(content):
-                                line_num = content[:match.start()].count('\n') + 1
-                                lines = content.split('\n')
-                                line_content = lines[line_num - 1].strip() if line_num <= len(lines) else ""
+                    # Check if file has cryptographic or sensitive operations
+                    is_sensitive = is_sensitive_context(content)
 
-                                # Check if this is used as a seed or in crypto context
-                                if is_used_for_seeding(content, match.start(), match.end()):
-                                    matches.append((file_path, line_num, line_content, source_type, is_sensitive))
-                except Exception:
-                    continue
+                    for pattern_str, source_type in non_random_patterns:
+                        pattern = re.compile(pattern_str)
+                        for match in pattern.finditer(content):
+                            line_num = content[:match.start()].count('\n') + 1
+                            lines = content.split('\n')
+                            line_content = lines[line_num - 1].strip() if line_num <= len(lines) else ""
+
+                            # Check if this is used as a seed or in crypto context
+                            if is_used_for_seeding(content, match.start(), match.end()):
+                                matches.append((file_path, line_num, line_content, source_type, is_sensitive))
+            except Exception:
+                continue
 
     print(f"[+] Found {len(matches)} instances of non-random sources")
     return matches
