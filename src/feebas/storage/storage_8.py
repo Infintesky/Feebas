@@ -3,7 +3,7 @@
 import os
 import tempfile
 import re
-from interfaces.adb_interface import run_command, get_package_path, pull_apk
+from utils.adb import run_command, get_package_path, pull_apk
 
 
 def decompile_apk(apk_path, output_dir):

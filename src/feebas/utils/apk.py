@@ -2,7 +2,7 @@
 """Shared utilities for APK analysis."""
 import os
 import tempfile
-from interfaces.adb_interface import run_command, get_package_path, pull_apk
+from utils.adb import run_command, get_package_path, pull_apk
 
 
 def decompile_apk_with_jadx(apk_path, output_dir):

@@ -3,7 +3,7 @@
 import re
 import os
 import tempfile
-from interfaces.adb_interface import run_command, get_package_path, pull_apk
+from utils.adb import run_command, get_package_path, pull_apk
 
 
 def parse_aapt_output(aapt_output):

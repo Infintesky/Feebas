@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Logcat analysis module for detecting sensitive data in logs."""
-from interfaces.adb_interface import run_command
+from utils.adb import run_command
 
 
 def capture_logcat():

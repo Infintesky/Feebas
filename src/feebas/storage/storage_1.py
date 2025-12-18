@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Storage analysis module for examining app data directories."""
-from interfaces.adb_interface import run_command
+from utils.adb import run_command
 
 
 def list_app_data_directory(package_name):

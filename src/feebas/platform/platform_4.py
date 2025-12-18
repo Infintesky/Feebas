@@ -3,7 +3,7 @@
 import os
 import re
 import xml.etree.ElementTree as ET
-from interfaces.adb_interface import run_command
+from utils.adb import run_command
 
 
 def parse_manifest_for_exported_components(apktool_dir):

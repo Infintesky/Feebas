@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Android Cache Data Analysis (PLATFORM-10)."""
-from interfaces.adb_interface import run_command
+from utils.adb import run_command
 
 
 def check_cache_for_sensitive_data(package_name, search_term):

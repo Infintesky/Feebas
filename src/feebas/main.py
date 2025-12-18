@@ -9,7 +9,7 @@ from crypto.crypto_1 import analyze_crypto_implementation
 from crypto.crypto_234 import analyze_crypto_api_usage
 from crypto.crypto_5 import analyze_key_security
 from crypto.crypto_6 import analyze_random_number_generation
-from crypto.utils import prepare_apk_for_analysis
+from utils.apk import prepare_apk_for_analysis
 from network.network_1 import analyze_network_security
 from network.network_3 import analyze_network_security_config
 from platform.platform_2 import analyze_implicit_intents_and_webview
