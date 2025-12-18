@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Main script to run APK analysis tests."""
 import shutil
+import os
 from storage.storage_11 import analyze_apk_from_device
 from storage.storage_1 import analyze_storage
 from storage.storage_3 import analyze_logcat
@@ -10,8 +11,10 @@ from crypto.crypto_234 import analyze_crypto_api_usage
 from crypto.crypto_5 import analyze_key_security
 from crypto.crypto_6 import analyze_random_number_generation
 from utils.apk import prepare_apk_for_analysis
+from utils.mobsf import analyze_apk_with_mobsf
 from network.network_1 import analyze_network_security
 from network.network_3 import analyze_network_security_config
+from platform.platform_1 import analyze_permissions
 from platform.platform_2 import analyze_implicit_intents_and_webview
 from platform.platform_4 import analyze_exported_components
 from platform.platform_6 import analyze_webview_security
@@ -24,6 +27,8 @@ def main():
     """Main function to run all test cases."""
 
     failed_tests = []
+    mobsf_result = None
+    mobsf_report = None
 
     # Prepare APK for all tests (pull and decompile once with both jadx and apktool)
     temp_dir, sources_dir, apktool_dir = prepare_apk_for_analysis(PACKAGE_NAME)
@@ -31,6 +36,24 @@ def main():
         print("\n[!] CRITICAL ERROR: Failed to prepare APK for analysis")
         print("[!] Cannot run any tests without decompiled APK")
         return
+
+    # Get APK path for MobSF analysis
+    apk_path = os.path.join(temp_dir, "base.apk")
+
+    # Run MobSF analysis (needed for PLATFORM-1 and future tests)
+    print("\n" + "=" * 80)
+    print("Running MobSF Static Analysis")
+    print("=" * 80)
+    print()
+
+    mobsf_result = analyze_apk_with_mobsf(apk_path, cleanup=False)
+
+    if not mobsf_result['success']:
+        print(f"\n[!] WARNING: MobSF analysis failed: {mobsf_result['error']}")
+        print("[!] Tests requiring MobSF report will be skipped")
+    else:
+        mobsf_report = mobsf_result['report']
+        print(f"\n[+] MobSF analysis completed successfully")
 
     try:
         print("=" * 60)
@@ -194,6 +217,23 @@ def main():
         print("=" * 80)
         print()
 
+        # PLATFORM-1 - Testing App Permissions (MobSF-based)
+        if mobsf_report:
+            result = analyze_permissions(
+                mobsf_report=mobsf_report,
+                test_id="MASTG-PLATFORM-1 - Testing App Permissions"
+            )
+
+            if not result:
+                print("\n[-] Test failed: PLATFORM-1 (error analyzing permissions)")
+                failed_tests.append("PLATFORM-1")
+            elif not result['passed']:
+                print(f"\n[-] Test failed: PLATFORM-1 (dangerous or unknown permissions detected)")
+                failed_tests.append("PLATFORM-1")
+        else:
+            print("\n[!] SKIP: PLATFORM-1 (MobSF report not available)")
+            print("=" * 80)
+
         # PLATFORM-2 - Testing Implicit Intents and WebView Configuration
         result = analyze_implicit_intents_and_webview(
             apktool_dir=apktool_dir,
@@ -264,6 +304,12 @@ def main():
             failed_tests.append("PLATFORM-10")
 
     finally:
+        # Clean up MobSF container
+        if mobsf_result and mobsf_result.get('success'):
+            from utils.mobsf import stop_mobsf_container
+            print(f"\n[+] Stopping MobSF container")
+            stop_mobsf_container()
+
         # Clean up temporary decompiled files at the very end
         if temp_dir:
             print(f"\n[+] Cleaning up temporary files")
