@@ -1,14 +1,66 @@
 #!/usr/bin/env python3
 """Android Certificate Security Analysis (CODE-1)."""
 import re
+from utils.adb import run_command
 
 
-def analyze_certificate_security(mobsf_report, test_id="MASTG-CODE-1 - Testing Certificate Security"):
+def extract_key_size_from_apk(apk_path):
+    """
+    Extract certificate key size from APK using apksigner.
+
+    Args:
+        apk_path: Path to the APK file
+
+    Returns:
+        int: Key size in bits, or 0 if could not be determined
+    """
+    if not apk_path:
+        return 0
+
+    # Try using apksigner first
+    result = run_command(
+        ["apksigner", "verify", "--print-certs", apk_path],
+        timeout=30
+    )
+
+    if result and result.returncode == 0:
+        output = result.stdout + result.stderr
+
+        # Look for key size patterns in apksigner output
+        key_patterns = [
+            r'(\d+)-bit\s+(?:RSA|EC|DSA)',
+            r'(?:RSA|EC|DSA)\s+(\d+)',
+            r'(\d+)\s+bit\s+(?:RSA|EC|DSA)',
+            r'key\s+size:\s+(\d+)',
+        ]
+
+        for pattern in key_patterns:
+            match = re.search(pattern, output, re.IGNORECASE)
+            if match:
+                return int(match.group(1))
+
+    # Try using keytool as fallback
+    # First extract the certificate
+    result = run_command(
+        ["unzip", "-p", apk_path, "META-INF/*.RSA", "META-INF/*.DSA", "META-INF/*.EC"],
+        timeout=30
+    )
+
+    if result and result.returncode == 0:
+        # The certificate is in the stdout, try to analyze it with keytool
+        # This is more complex and may require writing to a temp file
+        pass
+
+    return 0
+
+
+def analyze_certificate_security(mobsf_report, apk_path=None, test_id="MASTG-CODE-1 - Testing Certificate Security"):
     """
     Analyze certificate security (signature version and key size) from MobSF report.
 
     Args:
         mobsf_report: MobSF JSON report dictionary
+        apk_path: Path to APK file (optional, used if key size can't be determined from MobSF)
         test_id: Test identifier for reporting
 
     Returns:
@@ -72,16 +124,24 @@ def analyze_certificate_security(mobsf_report, test_id="MASTG-CODE-1 - Testing C
         # Try to extract key size (RSA key size or other key type)
         # Look for patterns like "2048-bit RSA" or "RSA 2048"
         key_patterns = [
-            r'(\d+)-bit\s+RSA',
-            r'RSA\s+(\d+)',
-            r'(\d+)\s+bit\s+RSA',
-            r'Key\s+Size:\s+(\d+)'
+            r'(\d+)-bit\s+(?:RSA|EC|DSA)',
+            r'(?:RSA|EC|DSA)\s+(\d+)',
+            r'(\d+)\s+bit\s+(?:RSA|EC|DSA)',
+            r'Key\s+Size:\s+(\d+)',
+            r'keysize:\s+(\d+)',
         ]
         for pattern in key_patterns:
             match = re.search(pattern, cert_info, re.IGNORECASE)
             if match:
                 key_size_int = int(match.group(1))
                 break
+
+    # If key size still not found and APK path is provided, try extracting from APK
+    if key_size_int == 0 and apk_path:
+        print(f"[*] Key size not found in MobSF report, extracting from APK...")
+        key_size_int = extract_key_size_from_apk(apk_path)
+        if key_size_int > 0:
+            print(f"[+] Extracted key size from APK: {key_size_int} bits")
 
     # Check for debug certificate in findings
     is_debug_cert = False

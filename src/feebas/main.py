@@ -227,6 +227,7 @@ def main():
         if mobsf_report:
             result = analyze_certificate_security(
                 mobsf_report=mobsf_report,
+                apk_path=apk_path,
                 test_id="MASTG-CODE-1 - Testing Certificate Security"
             )
 
