@@ -10,39 +10,64 @@ Automated MASVS/MASTG test cases for Android security analysis.
 
 ## Implemented Tests
 
-### MASVS-STORAGE Tests
-- MSTG-STORAGE-11 - Testing the Device-Access-Security Policy
-- MSTG-STORAGE-1 - Data Stored in the App Sandbox at Runtime
-- MSTG-STORAGE-3 - Testing Logs for Sensitive Data
-- MSTG-STORAGE-8 - Testing Backups for Sensitive Data
+### MASTG-STORAGE Tests
+- **MASTG-STORAGE-11** - Testing the Device-Access-Security Policy
+  - Extracts APK metadata using `aapt dump badging`
+- **MASTG-STORAGE-1** - Data Stored in the App Sandbox at Runtime
+  - Searches app sandbox for sensitive data (requires root)
+- **MASTG-STORAGE-3** - Testing Logs for Sensitive Data
+  - Scans logcat output for sensitive information
+- **MASTG-STORAGE-8** - Testing Backups for Sensitive Data
+  - Checks if `android:allowBackup` is disabled
 
-### MASVS-CRYPTO Tests
-- MSTG-CRYPTO-1 - Testing for Insecure Cryptographic Algorithms
-- MSTG-CRYPTO-2/3/4 - Cryptographic API Usage Analysis
-- MSTG-CRYPTO-5 - Testing Key Management
-- MSTG-CRYPTO-6 - Testing Random Number Generation
+### MASTG-CRYPTO Tests
+- **MASTG-CRYPTO-1** - Testing for Insecure Cryptographic Algorithms
+  - Detects hardcoded keys and weak algorithms (DES, 3DES, RC4, Blowfish)
+- **MASTG-CRYPTO-2/3/4** - Cryptographic API Usage Analysis
+  - Identifies weak primitives (ECB mode, MD5, SHA-1, small key sizes)
+- **MASTG-CRYPTO-5** - Testing Key Management
+  - Detects insecure key storage and hardcoded encryption keys
+- **MASTG-CRYPTO-6** - Testing Random Number Generation
+  - Identifies insecure Random() vs SecureRandom usage
 
-### MASVS-NETWORK Tests
-- MSTG-NETWORK-1 - Testing Data Encryption on the Network
-- MSTG-NETWORK-3 - Testing the Security Provider (Certificate Pinning)
+### MASTG-NETWORK Tests
+- **MASTG-NETWORK-1** - Testing Data Encryption on the Network
+  - Detects hardcoded HTTP URLs and cleartext traffic configuration
+- **MASTG-NETWORK-3** - Testing the Security Provider (Certificate Pinning)
+  - Verifies network_security_config.xml with certificate pinning
 
-### MASVS-CODE Tests
-- MSTG-CODE-1 - Testing Certificate Security (MobSF)
-- MSTG-CODE-2 - Testing for Debugging Flags and WebView Debugging
-- MSTG-CODE-3 - Testing for Debugging Symbols (MobSF)
-- MSTG-CODE-4 - Testing for Debugging Code and Verbose Error Logging
-- MSTG-CODE-9 - Testing Binary Protection Mechanisms (MobSF)
+### MASTG-CODE Tests
+- **MASTG-CODE-1** - Testing Certificate Security (MobSF)
+  - Checks signature schemes (v1/v2/v3/v4) from MobSF report
+  - Validates key size ≥ 2048 bits (fallback to apksigner if needed)
+  - Detects debug certificates and v1 signature vulnerabilities
+- **MASTG-CODE-2** - Testing for Debugging Flags and WebView Debugging
+  - Verifies `android:debuggable` is false or not set
+  - Detects unconditional `WebView.setWebContentsDebuggingEnabled(true)`
+- **MASTG-CODE-3** - Testing for Debugging Symbols (MobSF)
+  - Ensures symbols are stripped from all shared libraries
+- **MASTG-CODE-4** - Testing for Debugging Code and Verbose Error Logging
+  - Searches logcat for StrictMode occurrences
+- **MASTG-CODE-9** - Testing Binary Protection Mechanisms (MobSF)
+  - Verifies PIE and Stack Canary enabled for all libraries
 
-### MASVS-PLATFORM Tests
-- MSTG-PLATFORM-1 - Testing App Permissions (MobSF)
-- MSTG-PLATFORM-2 - Testing Implicit Intents and WebView Configuration
-- MSTG-PLATFORM-4 - Testing Exported Components
-- MSTG-PLATFORM-6 - Testing WebView Security Configuration
-- MSTG-PLATFORM-7 - Testing for Java Objects Exposed Through WebViews
-- MSTG-PLATFORM-10 - Testing Cached Sensitive Data
+### MASTG-PLATFORM Tests
+- **MASTG-PLATFORM-1** - Testing App Permissions (MobSF)
+  - Lists dangerous and unknown permissions
+- **MASTG-PLATFORM-2** - Testing Implicit Intents and WebView Configuration
+  - Detects dangerous intent filters and disabled SafeBrowsing
+- **MASTG-PLATFORM-4** - Testing Exported Components
+  - Finds unprotected exported components and mutable PendingIntents
+- **MASTG-PLATFORM-6** - Testing WebView Security Configuration
+  - Checks WebView security settings (file access, content access, etc.)
+- **MASTG-PLATFORM-7** - Testing for Java Objects Exposed Through WebViews
+  - Detects JavaScript interface exposure with minSdkVersion < 17
+- **MASTG-PLATFORM-10** - Testing Cached Sensitive Data
+  - Searches app cache for sensitive information (requires root)
 
-### MASVS-RESILIENCE Tests
-- MSTG-RESILIENCE-2 - Testing Anti-Debugging Detection
+### MASTG-RESILIENCE Tests
+- **MASTG-RESILIENCE-2** - Testing Anti-Debugging Detection
+  - Verifies `android:debuggable` is false or not set in manifest
 
 ## Dependencies
 
@@ -51,6 +76,7 @@ Automated MASVS/MASTG test cases for Android security analysis.
 - aapt (Android Asset Packaging Tool)
 - apktool (APK decompilation tool)
 - jadx (Dex to Java decompiler)
+- apksigner (Android APK Signing Tool) - for certificate key size extraction
 - Docker (for MobSF integration)
 
 ### Python Libraries
@@ -103,10 +129,10 @@ Edit `src/feebas/config.py`:
 ## MobSF Integration
 
 Tests marked with **(MobSF)** require MobSF Docker container:
-- PLATFORM-1 - App Permissions analysis
-- CODE-1 - Certificate security analysis (signature schemes, key size)
-- CODE-3 - Debugging symbols analysis (symbols stripped)
-- CODE-9 - Binary protection mechanisms (PIE, Stack Canary)
+- MASTG-PLATFORM-1 - App Permissions analysis
+- MASTG-CODE-1 - Certificate security analysis (signature schemes, key size)
+- MASTG-CODE-3 - Debugging symbols analysis (symbols stripped)
+- MASTG-CODE-9 - Binary protection mechanisms (PIE, Stack Canary)
 
 MobSF provides comprehensive static analysis including:
 - Permission analysis with risk classification
