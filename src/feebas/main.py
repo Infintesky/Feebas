@@ -70,7 +70,7 @@ def main():
         # MASTG-STORAGE-11 - Testing the Device-Access-Security Policy
         result = analyze_apk_from_device(
             package_name=PACKAGE_NAME,
-            test_id="MASTG-STORAGE-11 - Testing the Device-Access-Sadecurity Policy"
+            test_id="MASTG-STORAGE-11 - Testing the Device-Access-Security Policy"
         )
 
         if not result:
